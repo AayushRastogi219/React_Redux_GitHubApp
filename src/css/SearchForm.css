@@ -1,0 +1,14 @@
+.search-form {
+    background-color: #eee;
+    padding: 10px 15px;
+    text-align: right;
+}
+
+.field {
+    margin-left: 15px;
+    padding: 8px 12px;
+    font-size: 110%;
+    min-width: 300px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+}
