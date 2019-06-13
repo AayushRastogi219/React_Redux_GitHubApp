@@ -1,205 +1,151 @@
-import React, {Component} from 'react';
-import {Redirect} from 'react-router-dom';
-import TextBox from './TextBox';
-import RadioButton from './RadioButton';
-import Button from './Button';
-import {connect} from 'react-redux';
-import * as formAction from '../action/action';
+import React, {Component} from 'react'
+import PropTypes from 'prop-types'
+import InfiniteScroll from "react-infinite-scroll-component"
+import DataTable from './DataTable'
 
-class MainForm extends Component{
-  constructor() {
-    super();
-    this.state={
-      errorType:{errorEmail:null, errorFirtName:null, errorSecondName:null, errorPassword:null, errorConfirmPassword:null, errorPasswordFormat:null, errorPasswordMismatch:null}, redirect:false
-    }
+export default class MainForm extends Component{
+  state={
+    allContent:[],
+    items:[],
+    hasMore: true,
+    alignColumn:{alignId:'right',alignAlbunId:'right'},
+    selectedWidth:{albumWidth:'', idWidth:'', titleWidth:'auto', urlWidth:'auto', thumbnailWidth:'auto'}
+  }
+    
+  componentDidMount(){
+    this.getProductDetails()
   }
 
-  onChangeEmailID=(event)=>{
-    this.props.changeEmailIDStateInReducer(event.target.value);
-  }
-  onChangeFirstName=(event)=>{
-    this.props.changeFirstNameStateInReducer(event.target.value);
-  }
-  onChangeSecondName=(event)=>{
-    this.props.changeSecondNameStateInReducer(event.target.value);
-  }
-  onChangePassword=(event)=>{
-    this.props.changePasswordStateInReducer(event.target.value);
-  }
-  onChangeConfirmPassword=(event)=>{
-    this.props.changeConfirmedPasswordStateInReducer(event.target.value);
-  }
-  onChangeGender=(event)=>{
-    if(event.target.value === 'Male'){
-      this.props.changeMaleGenderStateInReducer(event.target.checked);
-      this.props.changeFemaleGenderStateInReducer(!event.target.checked);
-    }
-    else{
-      this.props.changeMaleGenderStateInReducer(!event.target.checked);
-      this.props.changeFemaleGenderStateInReducer(event.target.checked);
+  getProductDetails=()=>{
+    const productDetails = async ()=>{
+      try{
+        if(this.props.productUrl){
+          const response = await fetch(this.props.productUrl)
+          if (!response.ok) throw Error(response.statusText)
 
-    }
-  }
-
-  onSubmitButton=(event)=>{
-    event.preventDefault();
-
-    let mailformat = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    if(this.props.emailID != null && this.props.emailID.match(mailformat)){
-      this.setState(Object.assign(this.state.errorType,{errorEmail:''}));
-    }
-    else{
-      this.setState(Object.assign(this.state.errorType,{errorEmail:'*Invalid EmailId'}));
-    }
-
-    if(this.props.firstName == null || this.props.firstName.length === 0){
-      this.setState(Object.assign(this.state.errorType,{errorFirtName:'*Must Require'}));
-    }
-    else{
-      this.setState(Object.assign(this.state.errorType,{errorFirtName:''}));
-    }
-
-    if(this.props.secondName == null || this.props.secondName.length === 0){
-      this.setState(Object.assign(this.state.errorType,{errorSecondName:'*Must Require'}));
-    }
-    else{
-      this.setState(Object.assign(this.state.errorType,{errorSecondName:''}));
-    }
-
-    if(this.props.password == null || this.props.password.length === 0){
-      this.setState(Object.assign(this.state.errorType,{errorPassword:'*Must Require'}));
-      this.setState(Object.assign(this.state.errorType,{errorPasswordFormat:''}));
-    }
-    else{
-      this.setState(Object.assign(this.state.errorType,{errorPassword:''}));
-
-      let passwordFormat = /^.*(?=.{8,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%&]).*$/;
-      if(this.props.password != null && this.props.password.match(passwordFormat)){
-        this.setState(Object.assign(this.state.errorType,{errorPasswordFormat:''}));
-      }
-      else{
-        this.setState(Object.assign(this.state.errorType,{errorPasswordFormat:'*Password is weak (atleast 8 char,1 special char, 1 upper case alphabate, 1 number)'}));
-      }
-
-    }
-
-    if(this.props.confirmPassword == null || this.props.confirmPassword.length === 0){
-      this.setState(Object.assign(this.state.errorType,{errorConfirmPassword:'*Must Require'}));
-    }
-    else{
-      this.setState(Object.assign(this.state.errorType,{errorConfirmPassword:''}));
-    }
-
-    if(this.props.password != null && this.props.confirmPassword != null){
-      if(this.props.password === this.props.confirmPassword){
-        this.setState(Object.assign(this.state.errorType,{errorPasswordMismatch:''}));
-      }
-      else{
-        this.setState(Object.assign(this.state.errorType,{errorPasswordMismatch:'*Password and Confirm Password Mismatch'}));
+          const allProductData= await response.json()
+          this.setState({allContent:allProductData},()=>{
+            this.setState({items: this.state.allContent.slice(this.state.items.length, this.state.items.length + 20)}) 
+          })
+        }
+      } catch(error){
+        console.log(error)
       }
     }
+    productDetails()
+  }
 
-    const errorStates = {...this.state.errorType};
-    if(errorStates.errorEmail==='' && errorStates.errorFirtName==='' && errorStates.errorSecondName==='' && errorStates.errorPassword==='' && errorStates.errorConfirmPassword==='' && errorStates.errorPasswordFormat==='' && errorStates.errorPasswordMismatch===''){
-      this.setState({redirect:true})
+  fetchMoreData = () => {
+    const numberOfAppendRow=20;
+    if (this.state.items.length >= this.state.allContent.length) {
+      this.setState({ hasMore: false })
+      return;
     }
-    else{
-      this.setState({redirect:false})
+    let newItems = this.state.allContent.slice(this.state.items.length, this.state.items.length + numberOfAppendRow)
+    this.setState({items: [...this.state.items, ...newItems]})
+  };
+
+  onSelectAll=(isSelected, rows)=> {
+    // console.log(isSelected); // console.log('row',row)
+  }
+
+  onRowSelect=(row, isSelected, e)=>{
+    // console.log(isSelected); // console.log(e);
+  }
+  onRowClick=(row)=>{
+    // console.log('row',row)
+  }
+
+  onChangeDataAlignment=(event)=>{
+    event.persist();
+    if(event.target.value === this.props.albumId){
+      this.setState(()=>({alignColumn:{...this.state.alignColumn, alignId:event.target.checked ? this.props.rightAlign : this.props.leftAlign}}))
+    }
+    else if(event.target.value === this.props.id){
+      this.setState(()=>({alignColumn:{...this.state.alignColumn, alignAlbunId:event.target.checked ? this.props.rightAlign : this.props.leftAlign}}))
     }
   }
-  renderRedirect=()=>{
-      if(this.state.redirect){
-        return(<Redirect to='/gitDashBoard' />)
-      }
-      else{
-        return(<div></div>)
-      }
+
+  onChangeColumnWidth=(event)=>{
+    const name= event.target.name
+    event.persist();
+    
+    if(name === this.props.title){
+      this.setState(()=>({selectedWidth:{...this.state.selectedWidth, titleWidth:event.target.value}}))
+    }
+    else if(name === this.props.url){
+      this.setState(()=>({selectedWidth:{...this.state.selectedWidth, urlWidth:event.target.value}}))
+    }
+    else if(name === this.props.thumbnailUrl){
+      this.setState(()=>({selectedWidth:{...this.state.selectedWidth, thumbnailWidth:event.target.value}}))
+    }
+  }
+
+  getColumns=()=>{
+    const allRows=this.state.items
+    let headerNames=[]
+    let colWidthName=Object.keys({...this.state.selectedWidth})
+    let alignType=Object.keys({...this.state.alignColumn})
+    
+    if(allRows.length !== 0){
+      Object.keys(allRows[0]).forEach((key,index)=>{
+        if(isNaN(allRows[0][key]) && typeof allRows[0][key] !== 'number'){
+          headerNames.push({headerLabel:key, numeric:false, width:{...this.state.selectedWidth}[colWidthName[index]]})
+        }
+        else{
+          headerNames.push({headerLabel:key, numeric:true, alignment:{...this.state.alignColumn}[alignType[index]]})
+        }
+      })
+    }
+    return headerNames
   }
 
   render(){
+    const handleRowSelection = {mode:'checkbox', clickToSelect: true, bgColor: this.props.color,  onSelect: this.onRowSelect, onSelectAll: this.onSelectAll, columnWidth: this.props.ColWidth}
+
+    const onRowClick = {onRowClick: this.onRowClick}
     return(
-      <div>
-      <form style={formstyle}>
-        <TextBox placeholder={this.props.placeholderEmailId} updatedUserDetail={this.props.emailID} onUserDetailChange={this.onChangeEmailID} />
-        <p style={style}>{this.state.errorType.errorEmail}</p>
-        <TextBox placeholder={this.props.placeholderFirstName} updatedUserDetail={this.props.firstName} onUserDetailChange={this.onChangeFirstName}/>
-        <p style={style}>{this.state.errorType.errorFirtName}</p>
-        <TextBox placeholder={this.props.placeholderSecondName} updatedUserDetail={this.props.secondName} onUserDetailChange={this.onChangeSecondName}/>
-        <p style={style}>{this.state.errorType.errorSecondName}</p>
-        <TextBox placeholder={this.props.placeholderPassword} updatedUserDetail={this.props.password} onUserDetailChange={this.onChangePassword}/>
-        <p style={style}>{this.state.errorType.errorPassword}</p>
-        <p style={style}>{this.state.errorType.errorPasswordFormat}</p>
-        <TextBox placeholder={this.props.placeholderConfirmPassword} updatedUserDetail={this.props.confirmPassword} onUserDetailChange={this.onChangeConfirmPassword}/>
-        <p style={style}>{this.state.errorType.errorConfirmPassword}</p>
-        <p style={style}>{this.state.errorType.errorPasswordMismatch}</p>
-        <div style={{clear:'left'}}>
-          <RadioButton labelName={this.props.male} onGenderChange={this.onChangeGender} updatedGender={!this.props.gender}/>
-          <RadioButton labelName={this.props.female} onGenderChange={this.onChangeGender}  updatedGender={this.props.gender}/>
-        </div>
-        <div style={{margin:15, width:'97%'}}>
-          <Button buttonName={this.props.signInButton} onSubmitClick={this.onSubmitButton}/>
-        </div>
-      </form>
-      {this.renderRedirect()}
+      <div style={tableStyle}>
+        <h1>React DataTable App</h1>
+        <hr />
+        <InfiniteScroll dataLength={this.state.items.length} next={this.fetchMoreData} hasMore={this.state.hasMore} />
+
+        <DataTable rows={this.state.items} columns={this.getColumns()}
+          onRowSelection={handleRowSelection} onRowClick={onRowClick} 
+          dataAlign={this.state.alignColumn} onChangeAlignData={this.onChangeDataAlignment} 
+          colWidth={this.state.selectedWidth} onChangeColWidth={this.onChangeColumnWidth} 
+        />
+
       </div>
     )
   }
 }
+
+MainForm.propTypes = {
+  productUrl: PropTypes.string.isRequired,
+  color: PropTypes.string,
+  rightAlign: PropTypes.string,
+  leftAlign: PropTypes.string,
+  ColWidth: PropTypes.string,
+  thumbnailUrl: PropTypes.string,
+  url: PropTypes.string,
+  title: PropTypes.string,
+  id: PropTypes.string,
+  albumId: PropTypes.string
+};
+
 MainForm.defaultProps={
-  placeholderEmailId:"Email Id",
-  placeholderFirstName:"First Name",
-  placeholderSecondName:"Second Name",
-  placeholderPassword:"Password",
-  placeholderConfirmPassword:"Confirm Password",
-  male:"Male",
-  female:"Female",
-  signInButton:"Sign In"
+  productUrl:'https://jsonplaceholder.typicode.com/photos',
+  albumId:'albumId',
+  id:'id',
+  title:'title',
+  url:'url',
+  thumbnailUrl:'thumbnailUrl',
+  ColWidth:'70px',
+  color:'lightblue',
+  rightAlign:'right',
+  leftAlign:'left'
 }
-
-const style={
-  color:"red",
-  fontSize:'12px',
-  float:'left',
-  marginLeft:'10px'
-}
-const formstyle={
-  width:'25%',
-  backgroundColor: '#f2f2f2',
-  borderRadius:'10px',
-  margin:'0 auto',
-  top:'10%',
-  left:'40%',
-  position:'absolute',
-  transform:'translate(-50,-50)'
+const tableStyle={
+  margin:10
 };
-
-function mapStatesToProps(state){
-  return{emailID:state.formReducer.userEmailID, firstName:state.formReducer.userFirstName, secondName:state.formReducer.userSecondName, password:state.formReducer.userPassword, confirmPassword:state.formReducer.userConfirmPassword, gender:state.formReducer.userGender};
-}
-
-function dispatchStatesToProps(dispatch){
-  return{changeEmailIDStateInReducer:(updatedEmailID)=>{
-    dispatch(formAction.changeEmailID(updatedEmailID))
-  },
-  changeFirstNameStateInReducer:(updatedFirstName)=>{
-    dispatch(formAction.changeFirstName(updatedFirstName))
-  },
-  changeSecondNameStateInReducer:(updatedSecondName)=>{
-    dispatch(formAction.changeSecondName(updatedSecondName))
-  },
-  changePasswordStateInReducer:(updatedPassword)=>{
-    dispatch(formAction.changePassword(updatedPassword))
-  },
-  changeConfirmedPasswordStateInReducer:(updatedConfirmedPassword)=>{
-    dispatch(formAction.changeConfirmPassword(updatedConfirmedPassword))
-  },
-  changeMaleGenderStateInReducer:(updatedGender)=>{
-    dispatch(formAction.changeGender(updatedGender))
-  },
-  changeFemaleGenderStateInReducer:(updatedGender)=>{
-    dispatch(formAction.changeGender(updatedGender))
-  }
-};
-}
-
-export default connect(mapStatesToProps, dispatchStatesToProps)(MainForm);
